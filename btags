@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+MAKEFILEDIR=$(cd "$(dirname "$0")"; pwd)
+SRCDIR=$(pwd -P)
+TAGSDIR="$HOME/.btags$SRCDIR"
+PATH="$PATH:$MAKEFILEDIR"
+
+mkdir -p "$TAGSDIR"
+cd "$TAGSDIR"
+make -j -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" check_commands
+make -j -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" btags
+echo "$TAGSDIR"
