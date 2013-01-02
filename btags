@@ -2,29 +2,38 @@
 
 MAKEFILEDIR=$(cd "$(dirname "$0")"; pwd)
 
-SRCPATH="$1"
-if [[ "$SRCPATH" == "" ]]; then
-  SRCPATH="$PWD"
-fi
-SRCPATH=$(realpath "$SRCPATH")
+case "$1" in
+  clean) ACTION="clean";;
+  force) ACTION="force";;
+  *) ACTION="btags"
+    SRCPATH="$1"
+    if [[ "$SRCPATH" == "" ]]; then
+      SRCPATH="$PWD"
+    fi
+    SRCPATH=$(realpath "$SRCPATH")
+    ;;
+esac
 
 SRCDIR=$(realpath "$PWD")
-#if [ -d "$SRCPATH" ]; then
-#  SRCDIR="$SRCPATH"
-#else
-#  SRCDIR=$(dirname "$SRCPATH")
-#fi
-
 TAGSDIR="$HOME/.btags$SRCDIR"
 PATH="$PATH:$MAKEFILEDIR"
 
 mkdir -p "$TAGSDIR"
 cd "$TAGSDIR"
-make -j -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" check_commands
-make -j -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" btags
 
-if [ -d "$SRCPATH" ]; then
-  echo "$HOME/.btags$SRCPATH/tags.tags"
+if [[ "$ACTION" == "clean" ]]; then
+  make -j -r -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" clean
 else
-  echo "$HOME/.btags$SRCPATH.tags"
+  if [[ "$ACTION" == "force" ]]; then
+    rm files.list
+  fi
+
+  make -j -r -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" check_commands
+  make -j -r -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" btags
+
+  if [ -d "$SRCPATH" ]; then
+    echo "$HOME/.btags$SRCPATH/tags.tags"
+  else
+    echo "$HOME/.btags$SRCPATH.tags"
+  fi
 fi

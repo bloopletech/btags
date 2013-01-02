@@ -3,7 +3,7 @@
 while read FILE
 do
   SIZE=$(stat -c %s "$FILE")
-  if [[ "$SIZE" -lt 10001 ]]; then
+  if [[ "$SIZE" -lt 100001 ]]; then
     echo "$FILE";
   fi
 done
