@@ -32,8 +32,7 @@ files.list :
 \tcd $(srcdir) && ag --search-files --nocolor --ignore '*.tags' -L '.{1000,}' | xclude_long_files > $(abspath $@)
 
 files.mak : files.list
-\tsed 's/^\\(.*\\/\\)\\?\\(.*\\)$$/tags.tags : \\1\\2.tags\\n/g' < $< > $@
-\tsed 's/^\\(.*\\/\\)\\?\\(.*\\)$$/\\1/g' < $< | sed '/^$$/d' | sort -u | sed 's/^\\(.*\\)$$/\\1 : \\1\\n\\tmkdir -p \\$$@\\n/g' >> $@
+\tsed 's/^\\(.*\\)$$/tags.tags : \\1.tags\\n/g' < $< > $@
 
 .DEFAULT : 
 	mkdir -p $(<D) && touch $<
@@ -52,14 +51,12 @@ f << <<-EOF2
 
 .PHONY : check_commands
 
-.SECONDEXPANSION:
-
 EOF2
 
 EXTENSIONS.each_pair do |extension, command|
   f << <<-EOE2
-#{extension}.tags : #{extension} $$(@D)
-\t#{command} #{COMMANDS[command][:arguments]} $< > $@
+#{extension}.tags : #{extension}
+\tmkdir -p $(@D) && #{command} #{COMMANDS[command][:arguments]} $< > $@
 
 EOE2
 end
