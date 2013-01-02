@@ -33,7 +33,7 @@ clean :
 files.tags : files.list
 \tsed 's/^\\(.*\\)$$/\\1 1 \\1 path/g' < $< > $@
 
-files.list : 
+files.list : $(shell find $(abspath $(srcdir)) -type d)
 \tcd $(srcdir) && ag --search-files --nocolor --ignore '*.tags' -L '.{1000,}' > $(abspath $@)
 
 files.mak : files.list
