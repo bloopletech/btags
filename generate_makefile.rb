@@ -12,8 +12,6 @@ require_relative 'extensions.rb'
 
 COMMANDS["ag"] = { :source => "Download source from https://github.com/ggreer/the_silver_searcher and then follow the build instructions in the README.md document." }
 
-extensions_regex = "(#{EXTENSIONS.keys.map { |k| k.gsub(".", "\\.").sub("%", ".*") }.join("|")})"
-
 f = File.new("Makefile", "w")
 
 EXTENSIONS.each_pair do |extension, command|
