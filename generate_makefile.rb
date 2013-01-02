@@ -12,6 +12,7 @@ require_relative 'extensions.rb'
 
 COMMANDS["ag"] = { :source => "Download source from https://github.com/ggreer/the_silver_searcher and then follow the build instructions in the README.md document." }
 
+extensions_regex = "(#{EXTENSIONS.keys.map { |k| k.gsub(".", "\\.").sub("%", ".*") }.join("|")})"
 
 f = File.new("Makefile", "w")
 
@@ -21,26 +22,14 @@ end
 
 f << <<-EOF
 
-btags : files.list files.tags files.mak tags.tags 
-
-.PHONY : btags
+tags.tags : $(addsuffix .tags,$(shell cd $(srcdir) && ag --search-files --nocolor -g '.*'))
+\techo '$^' | tr ' ' "\\n" | sed 's/^\\(.*\\)\\.tags$$/\\1 1 \\1 path/g' > files.tags
+\tcat $^ files.tags | sed '/^$$/d' > tags.tags
 
 clean : 
 \trm -r ./*
 
 .PHONY : clean
-
-files.tags : files.list
-\tsed 's/^\\(.*\\)$$/\\1 1 \\1 path/g' < $< > $@
-
-files.list : $(shell find $(abspath $(srcdir)) -type d)
-\tcd $(srcdir) && ag --search-files --nocolor --ignore '*.tags' -L '.{1000,}' > $(abspath $@)
-
-files.mak : files.list
-\tsed 's/^\\(.*\\)$$/tags.tags : \\1.tags\\n/g' < $< > $@
-
-.DEFAULT : 
-	mkdir -p $(<D) && touch $<
 
 check_commands : 
 EOF
@@ -56,6 +45,9 @@ f << <<-EOF2
 
 .PHONY : check_commands
 
+.DEFAULT : 
+	mkdir -p $(<D) && touch $<
+
 EOF2
 
 EXTENSIONS.each_pair do |extension, command|
@@ -65,15 +57,6 @@ EXTENSIONS.each_pair do |extension, command|
 
 EOE2
 end
-
-f << <<-EOF3
-tags.tags : files.tags
-	cat $(filter %.tags,$^) | sed '/^$$/d' > tags.tags
-
-ifeq ($(MAKECMDGOALS),btags)
--include files.mak
-endif
-EOF3
 
 f.close
 

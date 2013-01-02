@@ -23,8 +23,8 @@ cd "$TAGSDIR"
 if [[ "$ACTION" == "clean" ]]; then
   make -j -r -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" clean
 else
-  make -j -r -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" check_commands
-  make -j -r -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" btags
+  make -j -r -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" check_commands
+  make -j -r -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" 
 
   if [ -d "$SRCPATH" ]; then
     echo "$HOME/.btags$SRCPATH/tags.tags"
