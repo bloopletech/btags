@@ -1,7 +1,20 @@
 #!/usr/bin/env bash
 
 MAKEFILEDIR=$(cd "$(dirname "$0")"; pwd)
-SRCDIR=$(pwd -P)
+
+SRCPATH="$1"
+if [[ "$SRCPATH" == "" ]]; then
+  SRCPATH="$PWD"
+fi
+SRCPATH=$(realpath "$SRCPATH")
+
+SRCDIR=$(realpath "$PWD")
+#if [ -d "$SRCPATH" ]; then
+#  SRCDIR="$SRCPATH"
+#else
+#  SRCDIR=$(dirname "$SRCPATH")
+#fi
+
 TAGSDIR="$HOME/.btags$SRCDIR"
 PATH="$PATH:$MAKEFILEDIR"
 
@@ -9,4 +22,9 @@ mkdir -p "$TAGSDIR"
 cd "$TAGSDIR"
 make -j -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" check_commands
 make -j -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" btags
-echo "$TAGSDIR"
+
+if [ -d "$SRCPATH" ]; then
+  echo "$HOME/.btags$SRCPATH/tags.tags"
+else
+  echo "$HOME/.btags$SRCPATH.tags"
+fi
