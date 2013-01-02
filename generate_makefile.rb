@@ -26,7 +26,7 @@ btags : files.list files.tags files.mak tags.tags
 .PHONY : btags
 
 files.tags : files.list
-\tsed 's/^\\(.*\\)$$/\\1\\t1\\t\\1\\tpath/g' < $< > $@
+\tsed 's/^\\(.*\\)$$/\\1 1 \\1 path/g' < $< > $@
 
 files.list : 
 \tcd $(srcdir) && ag --search-files --nocolor --ignore '*.tags' -L '.{1000,}' | xclude_long_files > $(abspath $@)
