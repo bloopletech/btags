@@ -21,10 +21,10 @@ mkdir -p "$TAGSDIR"
 cd "$TAGSDIR"
 
 if [[ "$ACTION" == "clean" ]]; then
-  make -j -r -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" clean
+  make -j -r -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" clean 2>/dev/null
 else
-  make -j -r -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" check_commands
-  make -j -r -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" 
+  make -j -r -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" check_commands 2>/dev/null
+  make -j -r -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" 2>/dev/null
 
   if [ -d "$SRCPATH" ]; then
     echo "$HOME/.btags$SRCPATH/tags.tags"

@@ -18,6 +18,6 @@ def rtags_file_extensions
 end
 
 #Add extensions, starting with least specific and moving to more specific
-add_extensions("ctags", "-xu --format=1", etags_file_extensions, "sudo apt-get install etags or similar; see also http://ctags.sourceforge.net.")
+add_extensions("ctags", "-xu", etags_file_extensions, "sudo apt-get install ctags or similar; see also http://ctags.sourceforge.net.")
 add_extensions("rtags", "-x -B", rtags_file_extensions, "gem install bloopletech-rtags; see also https://github.com/bloopletech/rtags.")
 

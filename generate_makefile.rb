@@ -21,7 +21,7 @@ end
 f << <<-EOF
 
 tags.tags : $(addsuffix .tags,$(shell cd $(srcdir) && ag --search-files --nocolor -g '.*'))
-\techo '$^' | tr ' ' "\\n" | sed 's/^\\(.*\\)\\.tags$$/\\1 1 \\1 path/g' > files.tags
+\techo '$^' | tr ' ' "\\n" | sed 's/^\\(.*\\)\\.tags$$/\\1 path 1 \\1 path/g' > files.tags
 \tcat $^ files.tags | sed '/^$$/d' > tags.tags
 
 clean : 
