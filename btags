@@ -74,15 +74,17 @@ elif [[ "$ACTION" == "stats" ]]; then
   echo "Overall tags file:"
   stats_for_file "$OVERALLTAGSFILEPATH"
 
+  echo "This project:"
   TOTALSIZE=$(human_readable_dirsize "$TAGSDIR")
-  echo "Total filesystem usage for this project: $TOTALSIZE"
-  echo
-
-  TOTALSIZE=$(human_readable_dirsize "$HOME/.btags/")
-  echo "Total filesystem usage for all btags projects: $TOTALSIZE"
+  echo "Total filesystem usage: $TOTALSIZE"
+  TAGFILECOUNT=$(cd "$TAGSDIR"; find . -type f \( ! -path '*/.*' \) | wc -l)
+  echo "Number of tag files: $TAGFILECOUNT"
   echo
 #  TOTALTAGSCOUNT=$(find "$TAGSDIR" -type f -print0 | xargs -0 cat | wc -l)
 #  echo "Total tags count: $TOTALTAGSCOUNT"
+
+  TOTALSIZE=$(human_readable_dirsize "$HOME/.btags/")
+  echo "Total filesystem usage for all btags projects: $TOTALSIZE"
   echo
 else
   make -j -r -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" check_commands 2>/dev/null
