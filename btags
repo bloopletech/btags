@@ -4,31 +4,89 @@ MAKEFILEDIR=$(cd "$(dirname "$0")"; pwd)
 
 case "$1" in
   clean) ACTION="clean";;
+  stats)
+    ACTION="stats"
+    SRCPATH="$2"
+    ;;
   *) ACTION="btags"
     SRCPATH="$1"
-    if [[ "$SRCPATH" == "" ]]; then
-      SRCPATH="$PWD"
-    fi
-    SRCPATH=$(realpath "$SRCPATH")
     ;;
 esac
 
 SRCDIR=$(realpath "$PWD")
 TAGSDIR="$HOME/.btags$SRCDIR"
 PATH="$PATH:$MAKEFILEDIR"
+OVERALLTAGSFILEPATH="$TAGSDIR/tags.tags"
+
+if [[ "$ACTION" == "btags" || "$ACTION" == "stats" ]]; then
+  if [[ "$SRCPATH" == "" ]]; then
+    SRCPATH="$PWD"
+  fi
+  SRCPATH=$(realpath "$SRCPATH")
+
+  if [ -d "$SRCPATH" ]; then
+    TAGSFILEPATH="$HOME/.btags$SRCPATH/tags.tags"
+  else
+    TAGSFILEPATH="$HOME/.btags$SRCPATH.tags"
+  fi
+fi
 
 mkdir -p "$TAGSDIR"
 cd "$TAGSDIR"
 
 if [[ "$ACTION" == "clean" ]]; then
   make -j -r -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" clean 2>/dev/null
+elif [[ "$ACTION" == "stats" ]]; then
+  function human_readable_filesize() {
+    LSOUTPUT=$(ls -1Ssh "$1")
+    LSPARTS=($LSOUTPUT)
+    echo ${LSPARTS[0]}
+  }
+
+  function human_readable_dirsize() {
+    DUOUTPUT=$(du -csh "$1")
+    DUPARTS=($DUOUTPUT)
+    echo ${DUPARTS[0]}
+  }
+
+  function human_readable_word_count() {
+    WCOUTPUT=$(wc -l "$1")
+    WCPARTS=($WCOUTPUT)
+    echo ${WCPARTS[0]}
+  }
+
+  function stats_for_file() {
+    echo "File path: $1"
+    FILESIZE=$(human_readable_filesize "$1")
+    echo "File size: $FILESIZE"
+    TAGSCOUNT=$(human_readable_word_count "$1")
+    echo "Tags count: $TAGSCOUNT"
+    echo
+  }
+
+  echo
+
+  if ! [ -d "$SRCPATH" ]; then
+    echo "Specific tags file:"
+    stats_for_file "$TAGSFILEPATH"
+  fi
+
+  echo "Overall tags file:"
+  stats_for_file "$OVERALLTAGSFILEPATH"
+
+  TOTALSIZE=$(human_readable_dirsize "$TAGSDIR")
+  echo "Total filesystem usage for this project: $TOTALSIZE"
+  echo
+
+  TOTALSIZE=$(human_readable_dirsize "$HOME/.btags/")
+  echo "Total filesystem usage for all btags projects: $TOTALSIZE"
+  echo
+#  TOTALTAGSCOUNT=$(find "$TAGSDIR" -type f -print0 | xargs -0 cat | wc -l)
+#  echo "Total tags count: $TOTALTAGSCOUNT"
+  echo
 else
   make -j -r -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" check_commands 2>/dev/null
   make -j -r -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" 2>/dev/null
 
-  if [ -d "$SRCPATH" ]; then
-    echo "$HOME/.btags$SRCPATH/tags.tags"
-  else
-    echo "$HOME/.btags$SRCPATH.tags"
-  fi
+  echo "$TAGSFILEPATH"
 fi
