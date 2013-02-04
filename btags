@@ -3,7 +3,9 @@
 MAKEFILEDIR=$(cd "$(dirname "$0")"; pwd)
 
 case "$1" in
+  path) ACTION="path";;
   clean) ACTION="clean";;
+  debug) ACTION="debug";;
   stats)
     ACTION="stats"
     SRCPATH="$2"
@@ -18,7 +20,7 @@ TAGSDIR="$HOME/.btags$SRCDIR"
 PATH="$PATH:$MAKEFILEDIR"
 OVERALLTAGSFILEPATH="$TAGSDIR/tags.tags"
 
-if [[ "$ACTION" == "btags" || "$ACTION" == "stats" ]]; then
+if [[ "$ACTION" == "btags" || "$ACTION" == "debug" || "$ACTION" == "path" || "$ACTION" == "stats" ]]; then
   if [[ "$SRCPATH" == "" ]]; then
     SRCPATH="$PWD"
   fi
@@ -34,8 +36,25 @@ fi
 mkdir -p "$TAGSDIR"
 cd "$TAGSDIR"
 
-if [[ "$ACTION" == "clean" ]]; then
+if [[ "$ACTION" == "btags" ]]; then
+  make -j -r -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" check_commands 2>/dev/null
+  make -j -r -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" 2>/dev/null
+
+  echo "$TAGSFILEPATH"
+elif [[ "$ACTION" == "debug" ]]; then
+  echo "Starting in $PWD"
+  echo "Srcdir is $SRCDIR"
+  echo "Running make..."
+  make -j -r -d -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" check_commands
+  make -j -r -d -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR"
+
+  echo "Make finished"
+  echo "Tags file path:"
+  echo "$TAGSFILEPATH"
+elif [[ "$ACTION" == "clean" ]]; then
   make -j -r -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" clean 2>/dev/null
+elif [[ "$ACTION" == "path" ]]; then
+  echo -n "$TAGSFILEPATH"
 elif [[ "$ACTION" == "stats" ]]; then
   function human_readable_filesize() {
     LSOUTPUT=$(ls -1Ssh "$1")
@@ -86,9 +105,4 @@ elif [[ "$ACTION" == "stats" ]]; then
   TOTALSIZE=$(human_readable_dirsize "$HOME/.btags/")
   echo "Total filesystem usage for all btags projects: $TOTALSIZE"
   echo
-else
-  make -j -r -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" check_commands 2>/dev/null
-  make -j -r -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" 2>/dev/null
-
-  echo "$TAGSFILEPATH"
 fi

@@ -14,7 +14,7 @@ def etags_file_extensions
 end
 
 def rtags_file_extensions
-  ["%.rb", "Gemfile"]
+  ["%.rb", "%.rake", "%.ru", "Gemfile", "Guardfile", "Procfile", "Rakefile"]
 end
 
 #Add extensions, starting with least specific and moving to more specific
