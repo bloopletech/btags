@@ -36,73 +36,77 @@ fi
 mkdir -p "$TAGSDIR"
 cd "$TAGSDIR"
 
-if [[ "$ACTION" == "btags" ]]; then
-  make -j -r -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" check_commands 2>/dev/null
-  make -j -r -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" 2>/dev/null
+(
+  flock -n 9 || { echo "An instance of btags is already updating this project."; exit 1; }
 
-  echo "$TAGSFILEPATH"
-elif [[ "$ACTION" == "debug" ]]; then
-  echo "Starting in $PWD"
-  echo "Srcdir is $SRCDIR"
-  echo "Running make..."
-  make -j -r -d -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" check_commands
-  make -j -r -d -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR"
+  if [[ "$ACTION" == "btags" ]]; then
+    make -j -r -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" check_commands 2>/dev/null
+    make -j -r -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" 2>/dev/null
 
-  echo "Make finished"
-  echo "Tags file path:"
-  echo "$TAGSFILEPATH"
-elif [[ "$ACTION" == "clean" ]]; then
-  make -j -r -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" clean 2>/dev/null
-elif [[ "$ACTION" == "path" ]]; then
-  echo -n "$TAGSFILEPATH"
-elif [[ "$ACTION" == "stats" ]]; then
-  function human_readable_filesize() {
-    LSOUTPUT=$(ls -1Ssh "$1")
-    LSPARTS=($LSOUTPUT)
-    echo ${LSPARTS[0]}
-  }
+    echo "$TAGSFILEPATH"
+  elif [[ "$ACTION" == "debug" ]]; then
+    echo "Starting in $PWD"
+    echo "Srcdir is $SRCDIR"
+    echo "Running make..."
+    make -j -r -d -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" check_commands
+    make -j -r -d -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR"
 
-  function human_readable_dirsize() {
-    DUOUTPUT=$(du -csh "$1")
-    DUPARTS=($DUOUTPUT)
-    echo ${DUPARTS[0]}
-  }
+    echo "Make finished"
+    echo "Tags file path:"
+    echo "$TAGSFILEPATH"
+  elif [[ "$ACTION" == "clean" ]]; then
+    make -j -r -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" clean 2>/dev/null
+  elif [[ "$ACTION" == "path" ]]; then
+    echo -n "$TAGSFILEPATH"
+  elif [[ "$ACTION" == "stats" ]]; then
+    function human_readable_filesize() {
+      LSOUTPUT=$(ls -1Ssh "$1")
+      LSPARTS=($LSOUTPUT)
+      echo ${LSPARTS[0]}
+    }
 
-  function human_readable_word_count() {
-    WCOUTPUT=$(wc -l "$1")
-    WCPARTS=($WCOUTPUT)
-    echo ${WCPARTS[0]}
-  }
+    function human_readable_dirsize() {
+      DUOUTPUT=$(du -csh "$1")
+      DUPARTS=($DUOUTPUT)
+      echo ${DUPARTS[0]}
+    }
 
-  function stats_for_file() {
-    echo "File path: $1"
-    FILESIZE=$(human_readable_filesize "$1")
-    echo "File size: $FILESIZE"
-    TAGSCOUNT=$(human_readable_word_count "$1")
-    echo "Tags count: $TAGSCOUNT"
+    function human_readable_word_count() {
+      WCOUTPUT=$(wc -l "$1")
+      WCPARTS=($WCOUTPUT)
+      echo ${WCPARTS[0]}
+    }
+
+    function stats_for_file() {
+      echo "File path: $1"
+      FILESIZE=$(human_readable_filesize "$1")
+      echo "File size: $FILESIZE"
+      TAGSCOUNT=$(human_readable_word_count "$1")
+      echo "Tags count: $TAGSCOUNT"
+      echo
+    }
+
     echo
-  }
 
-  echo
+    if ! [ -d "$SRCPATH" ]; then
+      echo "Specific tags file:"
+      stats_for_file "$TAGSFILEPATH"
+    fi
 
-  if ! [ -d "$SRCPATH" ]; then
-    echo "Specific tags file:"
-    stats_for_file "$TAGSFILEPATH"
+    echo "Overall tags file:"
+    stats_for_file "$OVERALLTAGSFILEPATH"
+
+    echo "This project:"
+    TOTALSIZE=$(human_readable_dirsize "$TAGSDIR")
+    echo "Total filesystem usage: $TOTALSIZE"
+    TAGFILECOUNT=$(cd "$TAGSDIR"; find . -type f \( ! -path '*/.*' \) | wc -l)
+    echo "Number of tag files: $TAGFILECOUNT"
+    echo
+  #  TOTALTAGSCOUNT=$(find "$TAGSDIR" -type f -print0 | xargs -0 cat | wc -l)
+  #  echo "Total tags count: $TOTALTAGSCOUNT"
+
+    TOTALSIZE=$(human_readable_dirsize "$HOME/.btags/")
+    echo "Total filesystem usage for all btags projects: $TOTALSIZE"
+    echo
   fi
-
-  echo "Overall tags file:"
-  stats_for_file "$OVERALLTAGSFILEPATH"
-
-  echo "This project:"
-  TOTALSIZE=$(human_readable_dirsize "$TAGSDIR")
-  echo "Total filesystem usage: $TOTALSIZE"
-  TAGFILECOUNT=$(cd "$TAGSDIR"; find . -type f \( ! -path '*/.*' \) | wc -l)
-  echo "Number of tag files: $TAGFILECOUNT"
-  echo
-#  TOTALTAGSCOUNT=$(find "$TAGSDIR" -type f -print0 | xargs -0 cat | wc -l)
-#  echo "Total tags count: $TOTALTAGSCOUNT"
-
-  TOTALSIZE=$(human_readable_dirsize "$HOME/.btags/")
-  echo "Total filesystem usage for all btags projects: $TOTALSIZE"
-  echo
-fi
+) 9>"$TAGSDIR/.btags.lock"
