@@ -60,7 +60,11 @@ cd "$TAGSDIR"
     make -j -r -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" clean 2>/dev/null
     echo ""
   elif [[ "$ACTION" == "path" ]]; then
-    echo -n "$TAGSFILEPATH"
+    if ! [ -e "$TAGSFILEPATH" ]; then
+      echo "Not a btags project"
+    else
+      echo -n "$TAGSFILEPATH"
+    fi
   elif [[ "$ACTION" == "stats" ]]; then
     function human_readable_filesize() {
       LSOUTPUT=$(ls -1Ssh "$1")
