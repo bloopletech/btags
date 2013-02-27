@@ -18,14 +18,16 @@ EXTENSIONS.each_pair do |extension, command|
   f << "vpath #{extension} $(srcdir)\n"
 end
 
+show_progress = "; echo -n '.'"
+
 f << <<-EOF
 
 tags.tags : $(addsuffix .tags,$(shell cd $(srcdir) && ag --search-files --nocolor -g '.*'))
-\techo '$^' | tr ' ' "\\n" | sed 's/^\\(.*\\)\\.tags$$/\\1 path 1 \\1 path/g' > files.tags
-\tcat $^ files.tags | sed '/^$$/d' > tags.tags
+\techo '$^' | tr ' ' "\\n" | sed 's/^\\(.*\\)\\.tags$$/\\1 path 1 \\1 path/g' > files.tags #{show_progress}
+\tcat $^ files.tags | sed '/^$$/d' > tags.tags #{show_progress}
 
 clean : 
-\trm -r ./*
+\trm -r ./* #{show_progress}
 
 .PHONY : clean
 
@@ -51,7 +53,7 @@ EOF2
 EXTENSIONS.each_pair do |extension, command|
   f << <<-EOE2
 #{extension}.tags : #{extension}
-\tmkdir -p $(@D) && #{command} #{COMMANDS[command][:arguments]} $< > $@
+\tmkdir -p $(@D) && #{command} #{COMMANDS[command][:arguments]} $< > $@ #{show_progress}
 
 EOE2
 end

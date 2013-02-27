@@ -43,6 +43,7 @@ cd "$TAGSDIR"
     make -j -r -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" check_commands 2>/dev/null
     make -j -r -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" 2>/dev/null
 
+    echo ""
     echo "$TAGSFILEPATH"
   elif [[ "$ACTION" == "debug" ]]; then
     echo "Starting in $PWD"
@@ -51,11 +52,13 @@ cd "$TAGSDIR"
     make -j -r -d -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" check_commands
     make -j -r -d -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR"
 
+    echo ""
     echo "Make finished"
     echo "Tags file path:"
     echo "$TAGSFILEPATH"
   elif [[ "$ACTION" == "clean" ]]; then
     make -j -r -s -f "$MAKEFILEDIR/Makefile" srcdir="$SRCDIR" clean 2>/dev/null
+    echo ""
   elif [[ "$ACTION" == "path" ]]; then
     echo -n "$TAGSFILEPATH"
   elif [[ "$ACTION" == "stats" ]]; then
