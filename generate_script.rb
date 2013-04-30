@@ -4,109 +4,94 @@ EXTENSIONS = {}
 def add_extensions(command, arguments, extensions, source)
   COMMANDS[command] = { :arguments => arguments, :extensions => [], :source => source }
   extensions.each do |extension|
-    EXTENSIONS[extension.gsub("%", "*")] = command
+    EXTENSIONS[extension] = command
   end
 end
 
 require_relative 'extensions.rb'
 
-#COMMANDS["ag"] = { :source => "Download source from https://github.com/ggreer/the_silver_searcher and then follow the build instructions in the README.md document." }
+COMMANDS["ag"] = { :extensions => [], :source => "Download source from https://github.com/ggreer/the_silver_searcher and then follow the build instructions in the README.md document." }
 
 EXTENSIONS.each_pair do |extension, command|
   COMMANDS[command][:extensions] << extension
 end
 
 
-f = File.new("btags_core", "w")
-
-f << <<-EOF
-#!/bin/bash
-
-shopt -s globstar
-shopt -s nullglob
-
-cd "$SRCDIR"
-
-for file in **/; do
-  mkdir -p "$TAGSDIR/$file"
-done
+f = <<-EOF
+function btags_check_commands() {
+  FAILED=0
 
 EOF
 
-COMMANDS.keys.each do |command|
-  f << <<-EOF2
-if [ -e "$TAGSDIR/#{command}.files" ]; then
-  rm "$TAGSDIR/#{command}.files"
-fi
-touch "$TAGSDIR/#{command}.files"
-
-EOF2
-end
-
 COMMANDS.each_pair do |command, options|
-  f << <<-EOF3
-for file in **/{#{options[:extensions].join(",")}}; do
-  if [ ! -e "$TAGSDIR/$file.tags" ]; then
-    echo "$file"
-  elif [ "$file" -nt "$TAGSDIR/$file.tags" ]; then
-    echo "$file"
+  f << <<-EOF
+  if [ "$(which "#{command}")" = "" ]; then
+    echo "Cannot find '#{command}'. Either the command is not in your PATH, or the command isn't installed. To install '#{command}': #{options[:source]}"
+    FAILED=1
   fi
-done > "$TAGSDIR/#{command}.files"
 
-EOF3
+EOF
 end
 
-COMMANDS.each_pair do |command, options|
-  f << <<-EOF4
-parallel --verbose "#{"#{command} #{options[:arguments]} {} > \"$TAGSDIR/{}.tags\"".gsub('"', '\\"')}" < "$TAGSDIR/#{command}.files"
-
-EOF4
-end
-
-=begin
-  #{command} #{COMMANDS[command][:arguments]} "$file" > '$@' #{show_progress}
-  f << "vpath #{extension} $(srcdir)\n"
-end
-
-show_progress = "; echo -n '.'"
+COMMANDS.delete_if { |command, options| options[:extensions].empty? }
 
 f << <<-EOF
+  if [ "$FAILED" = "1" ]; then
+    exit 1
+  fi
+}
 
-tags.tags : $(addsuffix .tags,$(shell cd $(srcdir) && ag --search-files --nocolor -g '.*'))
-\techo '$^' | tr ' ' "\\n" | sed 's/^\\(.*\\)\\.tags$$/\\1 path 1 \\1 path/g' > files.tags #{show_progress}
-\tcat $(addprefix ',$addsuffix ',$^)) files.tags | sed '/^$$/d' > tags.tags #{show_progress}
+function btags_clean() {
+  rm -r "$TAGSDIR"/*
+}
 
-clean : 
-\trm -r ./* #{show_progress}
+function btags_generate() {
+  cd "$SRCDIR"
 
-.PHONY : clean
-
-check_commands : 
 EOF
 
-COMMANDS.each_pair do |command, attributes|
-  f << <<-EOE3
-\tif [ "$$(which "#{command}")" = "" ]; then \\
-\techo "Cannot find '#{command}'. Either the command is not in your PATH, or the command isn't installed. To install '#{command}': #{attributes[:source]}" && exit 1; fi
-EOE3
+COMMANDS.each_pair do |command, options|
+  regex = "'^(#{options[:extensions].map { |e| e.gsub(".", "\\.").gsub("%", ".*") }.join("|")})$'"
+  f << <<-EOF
+  ag --search-files --nocolor -g #{regex} > "$TAGSDIR/#{command}.files"
+  while read file; do
+    if [ "$file" -nt "$TAGSDIR/$file.tags" ]; then
+      echo "$file"
+    fi
+  done < "$TAGSDIR/#{command}.files" > "$TAGSDIR/#{command}.changed.files"
+
+EOF
 end
 
-f << <<-EOF2
+f << <<-EOF
+  if [ #{COMMANDS.keys.map { |c| "! -s \"$TAGSDIR/#{c}.changed.files\"" }.join(" -a ")} ]; then
+    return 0
+  fi
 
-.PHONY : check_commands
+EOF
 
-.DEFAULT : 
-	mkdir -p '$(<D)' && touch '$<'
+COMMANDS.each_pair do |command, options|
+  f << <<-EOF
+  parallel mkdir -p "$TAGSDIR"/{//} "&&" "#{command} #{options[:arguments]}" {} ">" "$TAGSDIR"/{}.tags "2>/dev/null" "&&" echo -n "." < "$TAGSDIR/#{command}.changed.files"
 
-EOF2
-
-EXTENSIONS.each_pair do |extension, command|
-  f << <<-EOE2
-#{extension}.tags : #{extension}
-\tmkdir -p '$(@D)' && #{command} #{COMMANDS[command][:arguments]} '$<' > '$@' #{show_progress}
-
-EOE2
+EOF
 end
 
-f.close
-=end
+f << <<-EOF
+  cat "$TAGSDIR"/{#{COMMANDS.keys.join(",")}}.files | sed 's/^.*$/& path 1 & path/g' > "$TAGSDIR/files.tags"
+
+  while read file; do
+    cat "$TAGSDIR/$file.tags"
+  done < <(cat "$TAGSDIR"/{#{COMMANDS.keys.join(",")}}.files) > "$TAGSDIR/tags.tags"
+
+  cat "$TAGSDIR/files.tags" >> "$TAGSDIR/tags.tags"
+
+  rm "$TAGSDIR"/{#{COMMANDS.keys.join(",")}}.files "$TAGSDIR"/{#{COMMANDS.keys.join(",")}}.changed.files
+}
+
+EOF
+
+btags = File.read("btags")
+btags.gsub!(/\n#Start btags functions\n.*#End btags functions\n/m, "\n#Start btags functions\n#{f}#End btags functions\n")
+File.open("btags", "w") { |w| w << btags }
+
