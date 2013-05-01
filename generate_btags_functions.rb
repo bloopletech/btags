@@ -78,7 +78,8 @@ EOF
 end
 
 f << <<-EOF
-  cat "$TAGSDIR"/{#{COMMANDS.keys.join(",")}}.files | sed 's/^.*$/& path 1 & path/g' > "$TAGSDIR/files.tags"
+  ag --search-files --nocolor -g '.*' | file -F '' -N -0 -f - | \\
+  sed -e '/^\\(.*\\)\\x00.*text.*$/! { d }' -e 's/^\\(.*\\)\\x00.*$/\\\\1/' -e 's/ /\\x00/g' -e 's/^.*$/& path 1 & path/g' > "$TAGSDIR/files.tags"
 
   while read file; do
     cat "$TAGSDIR/$file.tags"
