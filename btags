@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-#Start btags functions
+#Start btags dynamic functions
 function btags_check_commands() {
   FAILED=0
 
@@ -22,10 +22,6 @@ function btags_check_commands() {
   if [ "$FAILED" = "1" ]; then
     exit 1
   fi
-}
-
-function btags_clean() {
-  rm -r "$TAGSDIR"/*
 }
 
 function btags_generate() {
@@ -64,7 +60,20 @@ function btags_generate() {
   rm "$TAGSDIR"/{ctags,rtags}.files "$TAGSDIR"/{ctags,rtags}.changed.files
 }
 
-#End btags functions
+#End btags dynamic functions
+
+function btags_clean() {
+  rm -r "$TAGSDIR"/*
+}
+
+function btags_git_branch() {
+  if [ ! -e .git ]; then
+    GITBRANCH=""
+    return
+  fi
+
+  GITBRANCH="@$(git branch --no-color | sed -e "/^\s/d" -e "s/^\*\s//")"
+}
 
 case "$1" in
   path) ACTION="path";;
@@ -80,7 +89,8 @@ case "$1" in
 esac
 
 SRCDIR=$(realpath "$PWD")
-TAGSDIR="$HOME/.btags$SRCDIR"
+btags_git_branch
+TAGSDIR="$HOME/.btags$SRCDIR$GITBRANCH"
 OVERALLTAGSFILEPATH="$TAGSDIR/tags.tags"
 
 if [[ "$ACTION" == "btags" || "$ACTION" == "debug" || "$ACTION" == "path" || "$ACTION" == "stats" ]]; then
@@ -89,15 +99,19 @@ if [[ "$ACTION" == "btags" || "$ACTION" == "debug" || "$ACTION" == "path" || "$A
   fi
   SRCPATH=$(realpath "$SRCPATH")
 
-  if [ -d "$SRCPATH" ]; then
-    TAGSFILEPATH="$HOME/.btags$SRCPATH/tags.tags"
+  SRCDIRLENGTH="${#SRCDIR}"
+  if [[ "${SRCPATH:0:$SRCDIRLENGTH}" == "$SRCDIR" ]]; then
+    SRCPATH="${SRCPATH:$SRCDIRLENGTH}"
+  fi
+
+  if [[ "$SRCPATH" == "" || -d "$SRCPATH" ]]; then
+    TAGSFILEPATH="$TAGSDIR$SRCPATH/tags.tags"
   else
-    TAGSFILEPATH="$HOME/.btags$SRCPATH.tags"
+    TAGSFILEPATH="$TAGSDIR$SRCPATH.tags"
   fi
 fi
 
 mkdir -p "$TAGSDIR"
-cd "$TAGSDIR"
 
 (
   flock -n 9 || { echo "An instance of btags is already updating this project."; exit 1; }
@@ -159,7 +173,7 @@ cd "$TAGSDIR"
 
     echo
 
-    if ! [ -d "$SRCPATH" ]; then
+    if [[ "$SRCPATH" != "" && ! -d "$SRCPATH" ]]; then
       echo "Specific tags file:"
       stats_for_file "$TAGSFILEPATH"
     fi

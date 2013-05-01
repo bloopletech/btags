@@ -41,10 +41,6 @@ f << <<-EOF
   fi
 }
 
-function btags_clean() {
-  rm -r "$TAGSDIR"/*
-}
-
 function btags_generate() {
   cd "$SRCDIR"
 
@@ -92,6 +88,6 @@ f << <<-EOF
 EOF
 
 btags = File.read("btags")
-btags.gsub!(/\n#Start btags functions\n.*#End btags functions\n/m, "\n#Start btags functions\n#{f}#End btags functions\n")
+btags.gsub!(/\n#Start btags dynamic functions\n.*#End btags dynamic functions\n/m, "\n#Start btags dynamic functions\n#{f}#End btags dynamic functions\n")
 File.open("btags", "w") { |w| w << btags }
 
