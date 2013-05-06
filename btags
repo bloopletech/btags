@@ -22,16 +22,16 @@ function btags_check_commands() {
 function btags_generate() {
   cd "$SRCDIR"
 
-  find . -type f \( \! -path '*/.*' \) -printf '%P\n' | file -F '' -N -0 --mime-type -f - | sed -n 's/^\(.*\)\x00text.*$//p' > "$TAGSDIR/files"
+  grep -r -l -I "^" | grep -v -E '(^\.|/\.)' > "$TAGSDIR/files"
 
-  grep --color=never -E '^(.*\.build\.xml|.*\.asm|.*\.ASM|.*\.s|.*\.S|.*\.A51|.*\.29k|.*\.29K|.*\.66k|.*\.66K|.*\.66s|.*\.66S|.*\.66x|.*\.66X|.*\.68k|.*\.68K|.*\.68s|.*\.68S|.*\.68x|.*\.68X|.*\.86k|.*\.86K|.*\.86s|.*\.86S|.*\.86x|.*\.86X|.*\.88k|.*\.88K|.*\.88s|.*\.88S|.*\.88x|.*\.88X|.*\.x66|.*\.x68|.*\.x86|.*\.x88|.*\.X66|.*\.X68|.*\.X86|.*\.X88|.*\.asp|.*\.asa|.*\.awk|.*\.gawk|.*\.mawk|.*\.bas|.*\.bi|.*\.bb|.*\.pb|.*\.bet|.*\.c|.*\.cc|.*\.cp|.*\.cpp|.*\.cxx|.*\.h|.*\.hh|.*\.hp|.*\.hpp|.*\.hxx|.*\.C|.*\.H|.*\.cs|.*\.cbl|.*\.cob|.*\.CBL|.*\.COB|.*\.bat|.*\.cmd|.*\.e|.*\.erl|.*\.ERL|.*\.hrl|.*\.HRL|.*\.as|.*\.mxml|.*\.f|.*\.for|.*\.ftn|.*\.f77|.*\.f90|.*\.f95|.*\.F|.*\.FOR|.*\.FTN|.*\.F77|.*\.F90|.*\.F95|.*\.go|.*\.htm|.*\.html|.*\.java|.*\.js|.*\.cl|.*\.clisp|.*\.el|.*\.l|.*\.lisp|.*\.lsp|.*\.lua|.*\.mak|.*\.mk|Makefile|makefile|GNUmakefile|.*\.m|.*\.ml|.*\.mli|.*\.p|.*\.pas|.*\.pl|.*\.pm|.*\.plx|.*\.perl|.*\.php|.*\.php3|.*\.phtml|.*\.py|.*\.pyx|.*\.pxd|.*\.pxi|.*\.scons|.*\.rexx|.*\.rx|.*\.ruby|.*\.SCM|.*\.SM|.*\.sch|.*\.scheme|.*\.scm|.*\.sm|.*\.sh|.*\.SH|.*\.bsh|.*\.bash|.*\.ksh|.*\.zsh|.*\.sl|.*\.sml|.*\.sig|.*\.sql|.*\.tcl|.*\.tk|.*\.wish|.*\.itcl|.*\.tex|.*\.vr|.*\.vri|.*\.vrh|.*\.v|.*\.vhdl|.*\.vhd|.*\.vim|.*\.y)$' > "$TAGSDIR/ctags.files"
+  grep -E --color=never '^(.*\.build\.xml|.*\.asm|.*\.ASM|.*\.s|.*\.S|.*\.A51|.*\.29k|.*\.29K|.*\.66k|.*\.66K|.*\.66s|.*\.66S|.*\.66x|.*\.66X|.*\.68k|.*\.68K|.*\.68s|.*\.68S|.*\.68x|.*\.68X|.*\.86k|.*\.86K|.*\.86s|.*\.86S|.*\.86x|.*\.86X|.*\.88k|.*\.88K|.*\.88s|.*\.88S|.*\.88x|.*\.88X|.*\.x66|.*\.x68|.*\.x86|.*\.x88|.*\.X66|.*\.X68|.*\.X86|.*\.X88|.*\.asp|.*\.asa|.*\.awk|.*\.gawk|.*\.mawk|.*\.bas|.*\.bi|.*\.bb|.*\.pb|.*\.bet|.*\.c|.*\.cc|.*\.cp|.*\.cpp|.*\.cxx|.*\.h|.*\.hh|.*\.hp|.*\.hpp|.*\.hxx|.*\.C|.*\.H|.*\.cs|.*\.cbl|.*\.cob|.*\.CBL|.*\.COB|.*\.bat|.*\.cmd|.*\.e|.*\.erl|.*\.ERL|.*\.hrl|.*\.HRL|.*\.as|.*\.mxml|.*\.f|.*\.for|.*\.ftn|.*\.f77|.*\.f90|.*\.f95|.*\.F|.*\.FOR|.*\.FTN|.*\.F77|.*\.F90|.*\.F95|.*\.go|.*\.htm|.*\.html|.*\.java|.*\.js|.*\.cl|.*\.clisp|.*\.el|.*\.l|.*\.lisp|.*\.lsp|.*\.lua|.*\.mak|.*\.mk|Makefile|makefile|GNUmakefile|.*\.m|.*\.ml|.*\.mli|.*\.p|.*\.pas|.*\.pl|.*\.pm|.*\.plx|.*\.perl|.*\.php|.*\.php3|.*\.phtml|.*\.py|.*\.pyx|.*\.pxd|.*\.pxi|.*\.scons|.*\.rexx|.*\.rx|.*\.ruby|.*\.SCM|.*\.SM|.*\.sch|.*\.scheme|.*\.scm|.*\.sm|.*\.sh|.*\.SH|.*\.bsh|.*\.bash|.*\.ksh|.*\.zsh|.*\.sl|.*\.sml|.*\.sig|.*\.sql|.*\.tcl|.*\.tk|.*\.wish|.*\.itcl|.*\.tex|.*\.vr|.*\.vri|.*\.vrh|.*\.v|.*\.vhdl|.*\.vhd|.*\.vim|.*\.y)$' "$TAGSDIR/files" > "$TAGSDIR/ctags.files"
   while read file; do
     if [ "$file" -nt "$TAGSDIR/$file.tags" ]; then
       echo "$file"
     fi
   done < "$TAGSDIR/ctags.files" > "$TAGSDIR/ctags.changed.files"
 
-  grep --color=never -E '^(.*\.rb|.*\.rake|.*\.ru|Gemfile|Guardfile|Procfile|Rakefile)$' > "$TAGSDIR/rtags.files"
+  grep -E --color=never '^(.*\.rb|.*\.rake|.*\.ru|Gemfile|Guardfile|Procfile|Rakefile)$' "$TAGSDIR/files" > "$TAGSDIR/rtags.files"
   while read file; do
     if [ "$file" -nt "$TAGSDIR/$file.tags" ]; then
       echo "$file"
@@ -46,15 +46,13 @@ function btags_generate() {
 
   parallel mkdir -p "$TAGSDIR"/{//} "&&" "rtags -x -B" {} ">" "$TAGSDIR"/{}.tags "2>/dev/null" "&&" echo -n "." < "$TAGSDIR/rtags.changed.files"
 
-  cat "$TAGSDIR/files" | sed -e '/^\(.*\)\x00.*text.*$/! { d }' -e 's/^\(.*\)\x00.*$/\1/' -e 's/ /\x00/g' -e 's/^.*$/& path 1 & path/g' > "$TAGSDIR/files.tags"
-
   while read file; do
     cat "$TAGSDIR/$file.tags"
   done < <(cat "$TAGSDIR"/{ctags,rtags}.files) > "$TAGSDIR/tags.tags"
 
-  cat "$TAGSDIR/files.tags" >> "$TAGSDIR/tags.tags"
+  sed -e 's/ /\x00/g' -e 's/^.*$/& path 1 & path/g' < "$TAGSDIR/files" >> "$TAGSDIR/tags.tags"
 
-  rm "$TAGSDIR"/{ctags,rtags}.files "$TAGSDIR"/{ctags,rtags}.changed.files
+  rm "$TAGSDIR/files" "$TAGSDIR"/{ctags,rtags}.files "$TAGSDIR"/{ctags,rtags}.changed.files
 }
 
 #End btags dynamic functions

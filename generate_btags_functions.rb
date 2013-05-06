@@ -10,8 +10,6 @@ end
 
 require_relative 'extensions.rb'
 
-#COMMANDS["ag"] = { :extensions => [], :source => "Download source from https://github.com/ggreer/the_silver_searcher and then follow the build instructions in the README.md document." }
-
 EXTENSIONS.each_pair do |extension, command|
   COMMANDS[command][:extensions] << extension
 end
@@ -44,14 +42,14 @@ f << <<-EOF
 function btags_generate() {
   cd "$SRCDIR"
 
-  find . -type f \\( \\! -path '*/.*' \\) -printf '%P\\n' | file -F '' -N -0 --mime-type -f - | sed -n 's/^\\(.*\\)\\x00text.*$/\\1/p' > "$TAGSDIR/files"
+  grep -r -l -I "^" | grep -v -E '(^\\.|/\\.)' > "$TAGSDIR/files"
 
 EOF
 
 COMMANDS.each_pair do |command, options|
   regex = "'^(#{options[:extensions].map { |e| e.gsub(".", "\\.").gsub("%", ".*") }.join("|")})$'"
   f << <<-EOF
-  grep --color=never -E #{regex} > "$TAGSDIR/#{command}.files"
+  grep -E --color=never #{regex} "$TAGSDIR/files" > "$TAGSDIR/#{command}.files"
   while read file; do
     if [ "$file" -nt "$TAGSDIR/$file.tags" ]; then
       echo "$file"
@@ -76,15 +74,13 @@ EOF
 end
 
 f << <<-EOF
-  cat "$TAGSDIR/files" | sed -e '/^\\(.*\\)\\x00.*text.*$/! { d }' -e 's/^\\(.*\\)\\x00.*$/\\\\1/' -e 's/ /\\x00/g' -e 's/^.*$/& path 1 & path/g' > "$TAGSDIR/files.tags"
-
   while read file; do
     cat "$TAGSDIR/$file.tags"
   done < <(cat "$TAGSDIR"/{#{COMMANDS.keys.join(",")}}.files) > "$TAGSDIR/tags.tags"
 
-  cat "$TAGSDIR/files.tags" >> "$TAGSDIR/tags.tags"
+  sed -e 's/ /\\x00/g' -e 's/^.*$/& path 1 & path/g' < "$TAGSDIR/files" >> "$TAGSDIR/tags.tags"
 
-  rm "$TAGSDIR"/{#{COMMANDS.keys.join(",")}}.files "$TAGSDIR"/{#{COMMANDS.keys.join(",")}}.changed.files
+  rm "$TAGSDIR/files" "$TAGSDIR"/{#{COMMANDS.keys.join(",")}}.files "$TAGSDIR"/{#{COMMANDS.keys.join(",")}}.changed.files
 }
 
 EOF
