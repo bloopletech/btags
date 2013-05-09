@@ -64,11 +64,13 @@ f << <<-EOF
     return 0
   fi
 
+  ESCAPEDTAGSDIR="$(printf '%q' "$TAGSDIR")"
+
 EOF
 
 COMMANDS.each_pair do |command, options|
   f << <<-EOF
-  parallel mkdir -p "$TAGSDIR"/{//} "&&" "#{command} #{options[:arguments]}" {} ">" "$TAGSDIR"/{}.tags "2>/dev/null" "&&" echo -n "." < "$TAGSDIR/#{command}.changed.files"
+  parallel mkdir "$ESCAPEDTAGSDIR"/{//} "2>/dev/null" "&&" "#{command} #{options[:arguments]}" {} ">" "$ESCAPEDTAGSDIR"/{}.tags "2>/dev/null" "&&" echo -n "." < "$TAGSDIR/#{command}.changed.files"
 
 EOF
 end

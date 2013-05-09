@@ -42,9 +42,11 @@ function btags_generate() {
     return 0
   fi
 
-  parallel mkdir -p "$TAGSDIR"/{//} "&&" "ctags -xu" {} ">" "$TAGSDIR"/{}.tags "2>/dev/null" "&&" echo -n "." < "$TAGSDIR/ctags.changed.files"
+  ESCAPEDTAGSDIR="$(printf '%q' "$TAGSDIR")"
 
-  parallel mkdir -p "$TAGSDIR"/{//} "&&" "rtags -x -B" {} ">" "$TAGSDIR"/{}.tags "2>/dev/null" "&&" echo -n "." < "$TAGSDIR/rtags.changed.files"
+  parallel mkdir "$ESCAPEDTAGSDIR"/{//} "2>/dev/null" "&&" "ctags -xu" {} ">" "$ESCAPEDTAGSDIR"/{}.tags "2>/dev/null" "&&" echo -n "." < "$TAGSDIR/ctags.changed.files"
+
+  parallel mkdir "$ESCAPEDTAGSDIR"/{//} "2>/dev/null" "&&" "rtags -x -B" {} ">" "$ESCAPEDTAGSDIR"/{}.tags "2>/dev/null" "&&" echo -n "." < "$TAGSDIR/rtags.changed.files"
 
   while read file; do
     cat "$TAGSDIR/$file.tags"
@@ -71,7 +73,10 @@ function btags_git_branch() {
 }
 
 case "$1" in
-  path) ACTION="path";;
+  path)
+    ACTION="path"
+    SRCPATH="$2"
+    ;;
   clean) ACTION="clean";;
   debug) ACTION="debug";;
   stats)
