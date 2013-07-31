@@ -52,7 +52,11 @@ function btags_generate() {
     cat "$TAGSDIR/$file.tags"
   done < <(cat "$TAGSDIR"/{ctags,rtags}.files) > "$TAGSDIR/tags.tags"
 
+  sed -e 's/^\([^ ]\+\) \+\([A-Za-z ]\+\) \+\([0-9]\+\) \+\([^ ]\+\).*$/\1\t\4\t\3/' -e '/^$/d' -e 's/\x00/ /g' < "$TAGSDIR/tags.tags" > "$TAGSDIR/tags.vimtags"
+
   sed -e 's/ /\x00/g' -e 's/^.*$/& path 1 & path/g' < "$TAGSDIR/files" >> "$TAGSDIR/tags.tags"
+
+  sed -i -e '/^$/d' "$TAGSDIR/tags.tags"
 
   rm "$TAGSDIR/files" "$TAGSDIR"/{ctags,rtags}.files "$TAGSDIR"/{ctags,rtags}.changed.files
 }
@@ -77,6 +81,7 @@ case "$1" in
     ACTION="path"
     SRCPATH="$2"
     ;;
+  vimpath) ACTION="vimpath";;
   clean) ACTION="clean";;
   debug) ACTION="debug";;
   stats)
@@ -92,6 +97,7 @@ SRCDIR=$(realpath "$PWD")
 btags_git_branch
 TAGSDIR="$HOME/.btags$SRCDIR$GITBRANCH"
 OVERALLTAGSFILEPATH="$TAGSDIR/tags.tags"
+OVERALLTAGSVIMFILEPATH="$TAGSDIR/tags.vimtags"
 
 if [[ "$ACTION" == "btags" || "$ACTION" == "debug" || "$ACTION" == "path" || "$ACTION" == "stats" ]]; then
   if [[ "$SRCPATH" == "" ]]; then
@@ -142,6 +148,12 @@ mkdir -p "$TAGSDIR"
       echo "Not a btags project"
     else
       echo -n "$TAGSFILEPATH"
+    fi
+  elif [[ "$ACTION" == "vimpath" ]]; then
+    if ! [ -e "$OVERALLTAGSVIMFILEPATH" ]; then
+      echo ""
+    else
+      echo -n "$OVERALLTAGSVIMFILEPATH"
     fi
   elif [[ "$ACTION" == "stats" ]]; then
     function human_readable_filesize() {
