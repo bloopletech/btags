@@ -44,9 +44,9 @@ function btags_generate() {
 
   ESCAPEDTAGSDIR="$(printf '%q' "$TAGSDIR")"
 
-  parallel mkdir -p "$ESCAPEDTAGSDIR"/{//} "2>/dev/null" "&&" "ctags -xu" {} ">" "$ESCAPEDTAGSDIR"/{}.tags "2>/dev/null" "&&" echo -n "." < "$TAGSDIR/ctags.changed.files"
+  parallel --gnu mkdir -p "$ESCAPEDTAGSDIR"/{//} "2>/dev/null" "&&" "ctags -xu" {} ">" "$ESCAPEDTAGSDIR"/{}.tags "2>/dev/null" "&&" echo -n "." < "$TAGSDIR/ctags.changed.files"
 
-  parallel mkdir -p "$ESCAPEDTAGSDIR"/{//} "2>/dev/null" "&&" "rtags -x -B" {} ">" "$ESCAPEDTAGSDIR"/{}.tags "2>/dev/null" "&&" echo -n "." < "$TAGSDIR/rtags.changed.files"
+  parallel --gnu mkdir -p "$ESCAPEDTAGSDIR"/{//} "2>/dev/null" "&&" "rtags -x -B" {} ">" "$ESCAPEDTAGSDIR"/{}.tags "2>/dev/null" "&&" echo -n "." < "$TAGSDIR/rtags.changed.files"
 
   while read file; do
     cat "$TAGSDIR/$file.tags"

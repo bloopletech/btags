@@ -70,7 +70,7 @@ EOF
 
 COMMANDS.each_pair do |command, options|
   f << <<-EOF
-  parallel mkdir -p "$ESCAPEDTAGSDIR"/{//} "2>/dev/null" "&&" "#{command} #{options[:arguments]}" {} ">" "$ESCAPEDTAGSDIR"/{}.tags "2>/dev/null" "&&" echo -n "." < "$TAGSDIR/#{command}.changed.files"
+  parallel --gnu mkdir -p "$ESCAPEDTAGSDIR"/{//} "2>/dev/null" "&&" "#{command} #{options[:arguments]}" {} ">" "$ESCAPEDTAGSDIR"/{}.tags "2>/dev/null" "&&" echo -n "." < "$TAGSDIR/#{command}.changed.files"
 
 EOF
 end
