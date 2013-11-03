@@ -9,8 +9,8 @@ function btags_check_commands() {
     FAILED=1
   fi
 
-  if [ "$(which "rtags")" = "" ]; then
-    echo "Cannot find 'rtags'. Either the command is not in your PATH, or the command isn't installed. To install 'rtags': gem install bloopletech-rtags; see also https://github.com/bloopletech/rtags."
+  if [ "$(which "ripper-tags")" = "" ]; then
+    echo "Cannot find 'ripper-tags'. Either the command is not in your PATH, or the command isn't installed. To install 'ripper-tags': gem install ripper-tags; see also https://github.com/bloopletech/ripper-tags."
     FAILED=1
   fi
 
@@ -31,34 +31,32 @@ function btags_generate() {
     fi
   done < "$TAGSDIR/ctags.files" > "$TAGSDIR/ctags.changed.files"
 
-  grep -E --color=never '^(.*\.rb|.*\.rake|.*\.ru|Gemfile|Guardfile|Procfile|Rakefile)$' "$TAGSDIR/files" > "$TAGSDIR/rtags.files"
+  grep -E --color=never '^(.*\.rb|.*\.rake|.*\.ru|Gemfile|Guardfile|Procfile|Rakefile)$' "$TAGSDIR/files" > "$TAGSDIR/ripper-tags.files"
   while read file; do
     if [ "$file" -nt "$TAGSDIR/$file.tags" ]; then
       echo "$file"
     fi
-  done < "$TAGSDIR/rtags.files" > "$TAGSDIR/rtags.changed.files"
+  done < "$TAGSDIR/ripper-tags.files" > "$TAGSDIR/ripper-tags.changed.files"
 
-  if [ ! -s "$TAGSDIR/ctags.changed.files" -a ! -s "$TAGSDIR/rtags.changed.files" ]; then
+  if [ ! -s "$TAGSDIR/ctags.changed.files" -a ! -s "$TAGSDIR/ripper-tags.changed.files" ]; then
     return 0
   fi
 
   ESCAPEDTAGSDIR="$(printf '%q' "$TAGSDIR")"
 
-  parallel --gnu mkdir -p "$ESCAPEDTAGSDIR"/{//} "2>/dev/null" "&&" "ctags -xu" {} ">" "$ESCAPEDTAGSDIR"/{}.tags "2>/dev/null" "&&" echo -n "." < "$TAGSDIR/ctags.changed.files"
+  parallel --gnu mkdir -p "$ESCAPEDTAGSDIR"/{//} "2>/dev/null" "&&" "ctags -u -n -f '-'" {} ">" "$ESCAPEDTAGSDIR"/{}.tags "2>/dev/null" "&&" echo -n "." < "$TAGSDIR/ctags.changed.files"
 
-  parallel --gnu mkdir -p "$ESCAPEDTAGSDIR"/{//} "2>/dev/null" "&&" "rtags -x -B" {} ">" "$ESCAPEDTAGSDIR"/{}.tags "2>/dev/null" "&&" echo -n "." < "$TAGSDIR/rtags.changed.files"
+  parallel --gnu mkdir -p "$ESCAPEDTAGSDIR"/{//} "2>/dev/null" "&&" "ripper-tags -f '-'" {} ">" "$ESCAPEDTAGSDIR"/{}.tags "2>/dev/null" "&&" echo -n "." < "$TAGSDIR/ripper-tags.changed.files"
 
   while read file; do
     cat "$TAGSDIR/$file.tags"
-  done < <(cat "$TAGSDIR"/{ctags,rtags}.files) > "$TAGSDIR/tags.tags"
+  done < <(cat "$TAGSDIR"/{ctags,ripper-tags}.files) > "$TAGSDIR/tags.tags"
 
-  sed -e 's/^\([^ ]\+\) \+\([A-Za-z ]\+\) \+\([0-9]\+\) \+\([^ ]\+\).*$/\1\t\4\t\3/' -e '/^$/d' -e 's/\x00/ /g' < "$TAGSDIR/tags.tags" > "$TAGSDIR/tags.vimtags"
-
-  sed -e 's/ /\x00/g' -e 's/^.*$/& path 1 & path/g' < "$TAGSDIR/files" >> "$TAGSDIR/tags.tags"
+  sed -e 's/^.*$/&\t&\t1;"\tF/g' < "$TAGSDIR/files" >> "$TAGSDIR/tags.tags"
 
   sed -i -e '/^$/d' "$TAGSDIR/tags.tags"
 
-  rm "$TAGSDIR/files" "$TAGSDIR"/{ctags,rtags}.files "$TAGSDIR"/{ctags,rtags}.changed.files
+  rm "$TAGSDIR/files" "$TAGSDIR"/{ctags,ripper-tags}.files "$TAGSDIR"/{ctags,ripper-tags}.changed.files
 }
 
 #End btags dynamic functions
@@ -81,7 +79,6 @@ case "$1" in
     ACTION="path"
     SRCPATH="$2"
     ;;
-  vimpath) ACTION="vimpath";;
   clean) ACTION="clean";;
   debug) ACTION="debug";;
   stats)
@@ -97,7 +94,6 @@ SRCDIR=$(realpath "$PWD")
 btags_git_branch
 TAGSDIR="$HOME/.btags$SRCDIR$GITBRANCH"
 OVERALLTAGSFILEPATH="$TAGSDIR/tags.tags"
-OVERALLTAGSVIMFILEPATH="$TAGSDIR/tags.vimtags"
 
 if [[ "$ACTION" == "btags" || "$ACTION" == "debug" || "$ACTION" == "path" || "$ACTION" == "stats" ]]; then
   if [[ "$SRCPATH" == "" ]]; then
@@ -148,12 +144,6 @@ mkdir -p "$TAGSDIR"
       echo "Not a btags project"
     else
       echo -n "$TAGSFILEPATH"
-    fi
-  elif [[ "$ACTION" == "vimpath" ]]; then
-    if ! [ -e "$OVERALLTAGSVIMFILEPATH" ]; then
-      echo ""
-    else
-      echo -n "$OVERALLTAGSVIMFILEPATH"
     fi
   elif [[ "$ACTION" == "stats" ]]; then
     function human_readable_filesize() {
