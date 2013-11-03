@@ -80,9 +80,7 @@ f << <<-EOF
     cat "$TAGSDIR/$file.tags"
   done < <(cat "$TAGSDIR"/{#{COMMANDS.keys.join(",")}}.files) > "$TAGSDIR/tags.tags"
 
-  sed -e 's/^\\([^ ]\\+\\) \\+\\([A-Za-z ]\\+\\) \\+\\([0-9]\\+\\) \\+\\([^ ]\\+\\).*$/\\1\\t\\4\\t\\3/' -e '/^$/d' -e 's/\\x00/ /g' < "$TAGSDIR/tags.tags" > "$TAGSDIR/tags.vimtags"
-
-  sed -e 's/ /\\x00/g' -e 's/^.*$/& path 1 & path/g' < "$TAGSDIR/files" >> "$TAGSDIR/tags.tags"
+  sed -e 's/^.*$/&\\t&\\t1;"\\tF/g' < "$TAGSDIR/files" >> "$TAGSDIR/tags.tags"
 
   sed -i -e '/^$/d' "$TAGSDIR/tags.tags"
 
