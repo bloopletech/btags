@@ -76,9 +76,11 @@ EOF
 end
 
 f << <<-EOF
+  echo -e "!_TAG_COLLECTION_NAME\\tProject Wide Tags" > "$TAGSDIR/tags.tags"
+
   while read file; do
     cat "$TAGSDIR/$file.tags"
-  done < <(cat "$TAGSDIR"/{#{COMMANDS.keys.join(",")}}.files) > "$TAGSDIR/tags.tags"
+  done < <(cat "$TAGSDIR"/{#{COMMANDS.keys.join(",")}}.files) >> "$TAGSDIR/tags.tags"
 
   sed -e 's/^.*$/&\\t&\\t1;"\\tF/g' < "$TAGSDIR/files" >> "$TAGSDIR/tags.tags"
 

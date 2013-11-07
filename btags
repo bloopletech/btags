@@ -48,9 +48,11 @@ function btags_generate() {
 
   parallel --gnu mkdir -p "$ESCAPEDTAGSDIR"/{//} "2>/dev/null" "&&" "ripper-tags -f '-'" {} ">" "$ESCAPEDTAGSDIR"/{}.tags "2>/dev/null" "&&" echo -n "." < "$TAGSDIR/ripper-tags.changed.files"
 
+  echo -e "!_TAG_COLLECTION_NAME\tProject Wide Tags" > "$TAGSDIR/tags.tags"
+
   while read file; do
     cat "$TAGSDIR/$file.tags"
-  done < <(cat "$TAGSDIR"/{ctags,ripper-tags}.files) > "$TAGSDIR/tags.tags"
+  done < <(cat "$TAGSDIR"/{ctags,ripper-tags}.files) >> "$TAGSDIR/tags.tags"
 
   sed -e 's/^.*$/&\t&\t1;"\tF/g' < "$TAGSDIR/files" >> "$TAGSDIR/tags.tags"
 
