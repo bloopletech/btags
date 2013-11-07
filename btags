@@ -44,9 +44,9 @@ function btags_generate() {
 
   ESCAPEDTAGSDIR="$(printf '%q' "$TAGSDIR")"
 
-  parallel --gnu mkdir -p "$ESCAPEDTAGSDIR"/{//} "2>/dev/null" "&&" "ctags -u -n -f '-'" {} ">" "$ESCAPEDTAGSDIR"/{}.tags "2>/dev/null" "&&" echo -n "." < "$TAGSDIR/ctags.changed.files"
+  parallel --gnu mkdir -p "$ESCAPEDTAGSDIR"/{//} "2>/dev/null" "&&" echo -e "!_TAG_COLLECTION_NAME\\\t{} Tags" ">" "$ESCAPEDTAGSDIR"/{}.tags "&&" ctags -u -n -f '-' {} ">>" "$ESCAPEDTAGSDIR"/{}.tags "2>/dev/null" "&&" echo -n "." < "$TAGSDIR/ctags.changed.files"
 
-  parallel --gnu mkdir -p "$ESCAPEDTAGSDIR"/{//} "2>/dev/null" "&&" "ripper-tags -f '-'" {} ">" "$ESCAPEDTAGSDIR"/{}.tags "2>/dev/null" "&&" echo -n "." < "$TAGSDIR/ripper-tags.changed.files"
+  parallel --gnu mkdir -p "$ESCAPEDTAGSDIR"/{//} "2>/dev/null" "&&" echo -e "!_TAG_COLLECTION_NAME\\\t{} Tags" ">" "$ESCAPEDTAGSDIR"/{}.tags "&&" ripper-tags -f '-' {} ">>" "$ESCAPEDTAGSDIR"/{}.tags "2>/dev/null" "&&" echo -n "." < "$TAGSDIR/ripper-tags.changed.files"
 
   echo -e "!_TAG_COLLECTION_NAME\tProject Wide Tags" > "$TAGSDIR/tags.tags"
 
